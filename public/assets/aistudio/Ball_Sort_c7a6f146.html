@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ball Sort Master Pro</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#0e1020;--panel:#1a1d33;--ink:#f1f3ff;--muted:#8d93b8;--glass:#3a3f66;--tube:#14162a;--accent:#00e5ff;--shadow:0 6px 18px rgba(0,0,0,.45);
+  --c0:#e5383b;--c1:#ff8a1f;--c2:#f6c90e;--c3:#2fbf4a;--c4:#16c8a8;--c5:#2f7bff;--c6:#9b4dff;--c7:#ff5fa2;
+  --c8:#00e5ff;--c9:#d48b48;--c10:#e9ecef;--c11:#495057;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#eef0f6;--panel:#ffffff;--ink:#1b1f33;--muted:#6b7190;--glass:#c9cfe4;--tube:#f6f7fb;--accent:#5b4bff;--shadow:0 6px 18px rgba(40,50,100,.15);
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;user-select:none;overflow-x:hidden}
+header{width:100%;max-width:680px;padding:10px 12px 4px;display:flex;flex-direction:column;gap:6px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%}
+.stat{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);padding:6px 10px;text-align:center;min-width:64px;flex:1}
+.stat b{display:block;font-size:17px;font-weight:800;line-height:1.1}
+.stat span{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:800;letter-spacing:.3px}
+.boss-badge{background:linear-gradient(135deg,#ff2a55,#ff8a1f);color:#fff;animation:pulse 1s infinite alternate}
+@keyframes pulse{from{transform:scale(0.96)}to{transform:scale(1.04)}}
+.tier-badge{color:#fff}
+.flame-meter{display:inline-flex;gap:2px;font-size:13px}
+.bar-wrap{width:100%;display:flex;align-items:center;gap:8px}
+.bar{flex:1;height:8px;border-radius:8px;background:var(--glass);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:8px;transition:width .35s}
+.moves-left-warn{color:#ff2a55!important;animation:pulse .5s infinite alternate}
+main{flex:1;width:100%;max-width:680px;display:flex;align-items:center;justify-content:center;padding:6px}
+#board{display:flex;flex-wrap:wrap;justify-content:center;gap:36px 36px;width:100%;max-height:calc(100vh - 190px);overflow-y:auto;padding:46px 8px 14px}
+.tube{width:42px;height:248px;border:3px solid var(--glass);border-radius:8px 8px 22px 22px;background:var(--tube);display:flex;flex-direction:column-reverse;align-items:center;padding:4px 0 4px;gap:2px;cursor:pointer;position:relative;transition:transform .15s,border-color .15s,box-shadow .15s;overflow:visible}
+.tube:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tube.sel{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 30%,transparent)}
+.tube.done{border-color:#2fbf4a;box-shadow:0 0 12px rgba(47,191,74,.4)}
+.tube.locked{border-style:dashed;opacity:.75;cursor:not-allowed}
+.tube.hint-src{border-color:#ff2a55;animation:pulse .6s infinite alternate}
+.tube.hint-dst{border-color:#f6c90e;box-shadow:0 0 10px rgba(246,201,14,.5)}
+.lock-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,12,30,.85);color:#fff;padding:4px 6px;border-radius:8px;font-size:10px;font-weight:800;white-space:nowrap;pointer-events:none}
+.ball{width:32px;height:32px;border-radius:50%;flex:none;position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 28%,#fff9 0 12%,transparent 14%),radial-gradient(circle at 40% 35%,color-mix(in srgb,var(--c) 80%,#fff) 0,var(--c) 55%,color-mix(in srgb,var(--c) 70%,#000) 100%);box-shadow:inset 0 -3px 5px rgba(0,0,0,.3);transition:transform .18s cubic-bezier(.3,1.4,.5,1);font-weight:900;font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.ball.c10{color:#1b1f33;text-shadow:none}
+.ball.mystery{background:radial-gradient(circle at 35% 35%,#555,#222);color:#00e5ff;font-size:17px}
+.ball.lift{transform:translateY(-36px)}
+.ball.drop{animation:dr .28s cubic-bezier(.3,1.5,.5,1)}
+@keyframes dr{from{transform:translateY(-50px)}to{transform:none}}
+.tube.bad{animation:sh .25s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+footer{width:100%;max-width:680px;padding:6px 10px 14px;display:flex;gap:6px;justify-content:center}
+button{font:inherit;font-weight:800;font-size:12px;border:0;border-radius:14px;padding:8px 8px;background:var(--panel);color:var(--ink);box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;max-width:96px;transition:transform .1s}
+button:active{transform:scale(.95)}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.modal{position:fixed;inset:0;background:rgba(10,12,30,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:100}
+.modal.on{display:flex}
+.card{background:var(--panel);border-radius:24px;padding:24px;text-align:center;box-shadow:var(--shadow);max-width:340px;width:100%;border:2px solid var(--accent)}
+.card h2{margin:0 0 6px;font-size:22px;color:var(--ink)}
+.card p{margin:0 0 12px;color:var(--muted);font-weight:700;font-size:14px}
+.stars-row{font-size:26px;color:#f6c90e;margin:6px 0 12px}
+.card button{background:var(--accent);color:#0e1020;width:100%;max-width:100%;flex-direction:row;justify-content:center;font-size:15px;padding:10px}
+.grid-select{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:280px;overflow-y:auto;padding:4px;margin-bottom:12px}
+.lvl-btn{background:var(--tube);border:1.5px solid var(--glass);color:var(--ink);border-radius:10px;padding:8px 4px;font-size:12px;min-width:0;max-width:none}
+.lvl-btn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--tube))}
+.lvl-btn.locked{opacity:.4;cursor:not-allowed}
+.lvl-stars{font-size:9px;color:#f6c90e;line-height:1}
+@media (max-width:420px){
+  .tube{width:42px;height:190px}
+  .ball{width:34px;height:34px;font-size:12px}
+  .stat b{font-size:15px}
+  #board{gap:20px 8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="top-row">
+    <div class="stat" style="flex:1.4">
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+        <b id="lvl">1</b>
+        <span id="tier-badge" class="badge tier-badge">Easy</span>
+        <span id="boss-badge" class="badge boss-badge" style="display:none">BOSS</span>
+      </div>
+      <div id="flame-meter" class="flame-meter">🔥</div>
+    </div>
+    <div class="stat"><b id="mv">0</b><span>Moves</span></div>
+    <div class="stat"><b id="par">0</b><span>Par</span></div>
+    <div class="stat"><b id="moves-left">–</b><span>Left</span></div>
+    <div class="stat"><b id="best">–</b><span>Best</span></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar"><i id="prog"></i></div>
+    <button id="btn-theme" style="max-width:36px;padding:4px;border-radius:10px" aria-label="Toggle theme">🌓</button>
+  </div>
+</header>
+<main><div id="board" role="group" aria-label="Tubes"></div></main>
+<footer>
+  <button id="lvl-select-btn" aria-label="Select Level"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Levels</button>
+  <button id="undo" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
+  <button id="restart" aria-label="Restart level"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Restart</button>
+  <button id="addt" aria-label="Add tube"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="addl">+Tube</span></button>
+  <button id="hint" aria-label="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>Hint</button>
+</footer>
+
+<!-- Win Modal -->
+<div id="modal" class="modal">
+  <div class="card">
+    <h2 id="win-title">Level Cleared! 🎉</h2>
+    <div id="win-stars" class="stars-row">★★★</div>
+    <p id="res"></p>
+    <button id="next">Next Level ➜</button>
+  </div>
+</div>
+
+<!-- Game Over Modal (Move Limit) -->
+<div id="fail-modal" class="modal">
+  <div class="card" style="border-color:#ff2a55">
+    <h2 style="color:#ff2a55">Out of Moves! ⚠️</h2>
+    <p>You reached the move limit for this challenge.</p>
+    <button id="fail-retry" style="background:#ff2a55;color:#fff">Try Again</button>
+  </div>
+</div>
+
+<!-- Level Select Modal -->
+<div id="select-modal" class="modal">
+  <div class="card" style="max-width:380px">
+    <h2>Select Level</h2>
+    <p>Choose an unlocked level to play</p>
+    <div id="grid-select" class="grid-select"></div>
+    <button id="select-close" style="background:var(--tube);color:var(--ink);border:1px solid var(--glass)">Close</button>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const SYMBOLS = ['●', '▲', '★', '■', '◆', '✦', '✿', '♥', '⬟', '✖', '◈', '♠'];
+
+// Audio Synthesizer (Loud & Crazy Sound Effects)
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function playSfx(type) {
+  try {
+    if (!audioCtx) audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'pop') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(450, t);
+      osc.frequency.exponentialRampToValueAtTime(950, t + 0.08);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.09);
+      osc.start(t); osc.stop(t + 0.09);
+    } else if (type === 'drop') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320, t);
+      osc.frequency.exponentialRampToValueAtTime(140, t + 0.12);
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.13);
+      osc.start(t); osc.stop(t + 0.13);
+    } else if (type === 'tubeDone') {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'triangle'; o.frequency.value = f;
+        o.connect(g); g.connect(audioCtx.destination);
+        const st = t + idx * 0.08;
+        g.gain.setValueAtTime(0.25, st);
+        g.gain.exponentialRampToValueAtTime(0.001, st + 0.25);
+        o.start(st); o.stop(st + 0.25);
+      });
+    } else if (type === 'win') {
+      // Fanfare chords + crazy airhorn
+      [440, 554, 659, 880].forEach((f, idx) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        o.connect(g); g.connect(audioCtx.destination);
+        const st = t + idx * 0.12;
+        g.gain.setValueAtTime(0.2, st);
+        g.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
+        o.start(st); o.stop(st + 0.4);
+      });
+    } else if (type === 'error') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, t);
+      osc.frequency.linearRampToValueAtTime(90, t + 0.2);
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+      osc.start(t); osc.stop(t + 0.2);
+    }
+  } catch(e) {}
+}
+
+/* DIFFICULTY CURVE (each level harder than the last)
+   Build one function, difficulty(level), that returns a score from 1 to 100
+   and drives every setting below. No two consecutive levels share the same score.
+*/
+function difficulty(l) {
+  let score = 3.0;
+  for (let i = 2; i <= l; i++) {
+    if (i % 10 === 0) {
+      score += 4.5; // Boss jump!
+    } else if ((i - 1) % 10 === 0) {
+      score += 0.5; // Continues upward
+    } else {
+      score += 0.65 + ((i % 5) * 0.08); // intra-group variation
+    }
+  }
+  return +score.toFixed(1);
+}
+
+function getLevelConfig(l) {
+  const diff = difficulty(l);
+  const isBoss = (l % 10 === 0);
+
+  // Dynamic tube count changing in every single next level
+  let numColors, emptyTubes;
+  if (l === 1) { numColors = 2; emptyTubes = 1; } // 3 tubes
+  else if (l === 2) { numColors = 3; emptyTubes = 1; } // 4 tubes
+  else if (l === 3) { numColors = 3; emptyTubes = 2; } // 5 tubes
+  else if (l === 4) { numColors = 4; emptyTubes = 2; } // 6 tubes
+  else if (l === 5) { numColors = 5; emptyTubes = 2; } // 7 tubes
+  else if (l === 6) { numColors = 6; emptyTubes = 2; } // 8 tubes
+  else if (l === 7) { numColors = 7; emptyTubes = 2; } // 9 tubes
+  else if (l === 8) { numColors = 8; emptyTubes = 2; } // 10 tubes
+  else {
+    const pattern = [7, 9, 8, 10, 7, 9, 8, 11, 8, 10, 9, 12];
+    const totalTubes = pattern[(l - 9) % pattern.length];
+    emptyTubes = (totalTubes >= 10 && l % 2 === 1) ? 3 : 2;
+    numColors = Math.min(12, Math.max(4, totalTubes - emptyTubes));
+    emptyTubes = totalTubes - numColors;
+  }
+
+  const cap = 7;
+  const mixMoves = 20 + l * 4;
+  const hasMystery = l >= 30;
+  const hasLocked = l >= 45;
+  const hasMoveLimit = l >= 60;
+
+  let tier = 'Easy', tierColor = '#2fbf4a';
+  if (l >= 46) { tier = 'Expert'; tierColor = '#9b4dff'; }
+  else if (l >= 26) { tier = 'Hard'; tierColor = '#ff8a1f'; }
+  else if (l >= 11) { tier = 'Medium'; tierColor = '#2f7bff'; }
+
+  const flames = Math.min(5, Math.max(1, Math.ceil(diff / 20)));
+
+  return { diff, isBoss, numColors, emptyTubes, cap, mixMoves, hasMystery, hasLocked, hasMoveLimit, tier, tierColor, flames };
+}
+
+let level = 1, maxUnlocked = 1, tubes = [], hist = [], revealed = [];
+let sel = -1, moves = 0, extra = 0, busy = false;
+let currentPar = 0, lastPar = 3, lockedTubeIdx = -1, isTubeUnlocked = false;
+let best = {}, starsData = {};
+
+try {
+  level = +localStorage.getItem('bs_lvl') || 1;
+  maxUnlocked = +localStorage.getItem('bs_max') || 1;
+  best = JSON.parse(localStorage.getItem('bs_best') || '{}');
+  starsData = JSON.parse(localStorage.getItem('bs_stars') || '{}');
+} catch(e) {}
+
+function save() {
+  try {
+    localStorage.setItem('bs_lvl', level);
+    localStorage.setItem('bs_max', maxUnlocked);
+    localStorage.setItem('bs_best', JSON.stringify(best));
+    localStorage.setItem('bs_stars', JSON.stringify(starsData));
+  } catch(e) {}
+}
+
+function rng(seed) {
+  return function() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+}
+
+// BFS Solver to guarantee shortest solution and calculate par
+function solvePuzzle(initialTubes, cap, lockedIdx) {
+  const isTargetSolved = tb => tb.every(t => t.length === 0 || (t.length === cap && t.every(b => b === t[0])));
+  if (isTargetSolved(initialTubes)) return [];
+
+  function stateKey(tb, unlocked) {
+    return (unlocked ? '1:' : '0:') + tb.map(t => t.join(',')).join('|');
+  }
+
+  const queue = [{ tubes: initialTubes.map(t => t.slice()), path: [], unlocked: lockedIdx === -1 }];
+  const visited = new Set([stateKey(initialTubes, lockedIdx === -1)]);
+  let limit = 2200;
+
+  while (queue.length > 0 && limit-- > 0) {
+    const { tubes, path, unlocked } = queue.shift();
+
+    for (let i = 0; i < tubes.length; i++) {
+      if (!tubes[i].length) continue;
+      if (!unlocked && i === lockedIdx) continue;
+      const topCol = tubes[i][tubes[i].length - 1];
+
+      for (let j = 0; j < tubes.length; j++) {
+        if (i === j) continue;
+        if (!unlocked && j === lockedIdx) continue;
+        const dest = tubes[j];
+        if (dest.length >= cap) continue;
+        if (dest.length && dest[dest.length - 1] !== topCol) continue;
+        if (!dest.length && tubes[i].every(b => b === topCol)) continue;
+
+        const nextTubes = tubes.map(t => t.slice());
+        const s = nextTubes[i], d = nextTubes[j];
+        const c = s[s.length - 1];
+        while (s.length && s[s.length - 1] === c && d.length < cap) d.push(s.pop());
+
+        const nowUnlocked = unlocked || nextTubes.some(t => t.length === cap && t.every(b => b === t[0]));
+        const key = stateKey(nextTubes, nowUnlocked);
+
+        if (!visited.has(key)) {
+          visited.add(key);
+          const nextPath = [...path, [i, j]];
+          if (isTargetSolved(nextTubes)) return nextPath;
+          queue.push({ tubes: nextTubes, path: nextPath, unlocked: nowUnlocked });
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Level Generator with Solvability Guarantee & Par Measurement
+function generateLevelData(l) {
+  const cfg = getLevelConfig(l);
+  let attempt = 0;
+  let finalTubes, shortestPath, calculatedPar;
+
+  while (attempt < 5) {
+    const r = rng(l * 7919 + 13 + attempt * 101);
+    const t = [];
+    for (let c = 0; c < cfg.numColors; c++) {
+      t.push(Array(cfg.cap).fill(c));
+    }
+    for (let e = 0; e < cfg.emptyTubes; e++) t.push([]);
+
+    const locked = cfg.hasLocked ? 0 : -1;
+
+    // Scramble with reverse moves
+    let lastFrom = -1, lastTo = -1;
+    for (let m = 0; m < cfg.mixMoves; m++) {
+      const candidates = [];
+      for (let a = 0; a < t.length; a++) {
+        if (!t[a].length) continue;
+        if (cfg.hasLocked && a === locked) continue;
+        for (let b = 0; b < t.length; b++) {
+          if (a === b) continue;
+          if (cfg.hasLocked && b === locked) continue;
+          if (t[b].length >= cfg.cap) continue;
+          if (a === lastTo && b === lastFrom) continue;
+          candidates.push([a, b]);
+        }
+      }
+      if (candidates.length) {
+        const choice = candidates[Math.floor(r() * candidates.length)];
+        t[choice[1]].push(t[choice[0]].pop());
+        lastFrom = choice[0];
+        lastTo = choice[1];
+      }
+    }
+
+    // Guarantee empty tubes are completely empty at start of level
+    for (let e = cfg.numColors; e < t.length; e++) {
+      while (t[e].length > 0) {
+        const ball = t[e].pop();
+        const target = t.slice(0, cfg.numColors).find(tube => tube.length < cfg.cap);
+        if (target) {
+          target.push(ball);
+        } else {
+          t[e].push(ball);
+          break;
+        }
+      }
+    }
+
+    // Near top of curve: reject level if 2 neighboring balls share a color
+    if (cfg.diff >= 75) {
+      let hasNeighborSame = false;
+      for (const tube of t) {
+        for (let k = 0; k < tube.length - 1; k++) {
+          if (tube[k] === tube[k + 1]) { hasNeighborSame = true; break; }
+        }
+        if (hasNeighborSame) break;
+      }
+      if (hasNeighborSame && attempt < 4) { attempt++; continue; }
+    }
+
+    // Measure Par with solver
+    shortestPath = solvePuzzle(t, cfg.cap, locked);
+    if (shortestPath && shortestPath.length > 0) {
+      calculatedPar = shortestPath.length;
+      // Par must not drop drastically compared to previous level
+      if (attempt === 0 || calculatedPar >= Math.max(3, lastPar - 2)) {
+        finalTubes = t;
+        break;
+      }
+    } else {
+    attempt++;
+  }
+
+  if (!finalTubes) finalTubes = t;
+  if (!calculatedPar) calculatedPar = Math.max(lastPar, 6);
+  lastPar = calculatedPar;
+  return { tubes: finalTubes, par: calculatedPar, lockedIdx: cfg.hasLocked ? 0 : -1 };
+}
+
+function load(l) {
+  level = l;
+  const cfg = getLevelConfig(level);
+  const data = generateLevelData(level);
+  tubes = data.tubes;
+  currentPar = data.par;
+  lockedTubeIdx = data.lockedIdx;
+  isTubeUnlocked = lockedTubeIdx === -1;
+
+  hist = []; sel = -1; moves = 0; extra = 0; busy = false;
+  revealed = tubes.map(t => t.map((_, idx) => !cfg.hasMystery || idx === t.length - 1));
+
+  $('#modal').classList.remove('on');
+  $('#fail-modal').classList.remove('on');
+  render();
+}
+
+const full = (t, cap) => t.length === cap && t.every(b => b === t[0]);
+const solved = cap => tubes.every(t => t.length === 0 || full(t, cap));
+
+function render() {
+  const cfg = getLevelConfig(level);
+  const b = $('#board'); b.innerHTML = '';
+
+  tubes.forEach((t, i) => {
+    const isLocked = !isTubeUnlocked && i === lockedTubeIdx;
+    const isDone = full(t, cfg.cap);
+    const d = document.createElement('div');
+    d.className = 'tube' + (i === sel ? ' sel' : '') + (isDone ? ' done' : '') + (isLocked ? ' locked' : '');
+    d.tabIndex = isLocked ? -1 : 0;
+    d.setAttribute('role', 'button');
+    d.setAttribute('aria-label', `Tube ${i + 1}, ${t.length} balls`);
+
+    if (isLocked) {
+      const lockLabel = document.createElement('div');
+      lockLabel.className = 'lock-banner';
+      lockLabel.textContent = '🔒 Locked';
+      d.appendChild(lockLabel);
+    }
+
+    t.forEach((c, k) => {
+      const isTop = (k === t.length - 1);
+      if (isTop) revealed[i][k] = true;
+      const isHidden = cfg.hasMystery && !revealed[i][k];
+
+      const e = document.createElement('div');
+      e.className = 'ball' + (c === 10 ? ' c10' : '') + (isHidden ? ' mystery' : '') + (i === sel && isTop ? ' lift' : '');
+      if (!isHidden) {
+        e.style.setProperty('--c', `var(--c${c})`);
+        e.textContent = SYMBOLS[c];
+      } else {
+        e.textContent = '?';
+      }
+      d.appendChild(e);
+    });
+
+    d.onclick = () => tap(i);
+    d.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); tap(i); } };
+    b.appendChild(d);
+  });
+
+  // Stats & Badges
+  $('#lvl').textContent = level;
+  $('#tier-badge').textContent = cfg.tier;
+  $('#tier-badge').style.backgroundColor = cfg.tierColor;
+  $('#boss-badge').style.display = cfg.isBoss ? 'inline-flex' : 'none';
+  $('#flame-meter').textContent = '🔥'.repeat(cfg.flames);
+
+  $('#mv').textContent = moves;
+  $('#par').textContent = currentPar;
+  $('#best').textContent = best[level] ? `${best[level]}m` : '–';
+
+  // Move limit
+  if (cfg.hasMoveLimit) {
+    const limit = currentPar + 6;
+    const left = Math.max(0, limit - moves);
+    $('#moves-left').textContent = left;
+    $('#moves-left').className = left <= 3 ? 'moves-left-warn' : '';
+  } else {
+    $('#moves-left').textContent = '∞';
+    $('#moves-left').className = '';
+  }
+
+  $('#undo').disabled = !hist.length;
+  $('#addt').disabled = extra >= 1;
+
+  // Progress Bar
+  const completedCount = tubes.filter(t => full(t, cfg.cap)).length;
+  $('#prog').style.width = Math.min(100, (completedCount / cfg.numColors) * 100) + '%';
+}
+
+function canMove(a, b) {
+  if (a === b) return false;
+  const cfg = getLevelConfig(level);
+  if (!isTubeUnlocked && (a === lockedTubeIdx || b === lockedTubeIdx)) return false;
+  const s = tubes[a], d = tubes[b];
+  if (!s.length || d.length >= cfg.cap) return false;
+  return !d.length || d[d.length - 1] === s[s.length - 1];
+}
+
+function tap(i) {
+  if (busy) return;
+  const cfg = getLevelConfig(level);
+
+  if (!isTubeUnlocked && i === lockedTubeIdx) {
+    playSfx('error');
+    const el = $('#board').children[i]; if (el) el.classList.add('bad');
+    setTimeout(() => { if (el) el.classList.remove('bad'); }, 250);
+    return;
+  }
+
+  if (sel < 0) {
+    if (tubes[i].length) {
+      sel = i;
+      playSfx('pop');
+      render();
+    }
+    return;
+  }
+
+  if (sel === i) {
+    sel = -1;
+    render();
+    return;
+  }
+
+  if (canMove(sel, i)) {
+    hist.push(JSON.stringify({ tubes, revealed, extra, isTubeUnlocked }));
+    const s = tubes[sel], d = tubes[i], c = s[s.length - 1];
+
+    let count = 0;
+    while (s.length && s[s.length - 1] === c && d.length < cfg.cap) {
+      d.push(s.pop());
+      revealed[i].push(true);
+      revealed[sel].pop();
+      count++;
+    }
+
+    moves++; sel = -1;
+    playSfx('drop');
+
+    // Uncover new top ball
+    if (s.length) revealed[sel][s.length - 1] = true;
+
+    // Check locked tube unlock condition
+    if (!isTubeUnlocked && tubes.some(t => full(t, cfg.cap))) {
+      isTubeUnlocked = true;
+      playSfx('tubeDone');
+    }
+
+    render();
+    const top = $('#board').children[i]?.lastElementChild;
+    if (top) top.classList.add('drop');
+
+    if (solved(cfg.cap)) {
+      win();
+    } else if (cfg.hasMoveLimit && moves >= (currentPar + 6)) {
+      fail();
+    }
+  } else {
+    playSfx('error');
+    const el = $('#board').children[i];
+    if (el) {
+      el.classList.add('bad');
+      setTimeout(() => el.classList.remove('bad'), 250);
+    }
+  }
+}
+
+function win() {
+  busy = true;
+  playSfx('win');
+
+  const earnedStars = moves <= currentPar ? 3 : (moves <= currentPar + 3 ? 2 : 1);
+  if (!starsData[level] || earnedStars > starsData[level]) starsData[level] = earnedStars;
+  if (!best[level] || moves < best[level]) best[level] = moves;
+
+  if (level >= maxUnlocked) maxUnlocked = level + 1;
+  save();
+
+  $('#win-title').textContent = getLevelConfig(level).isBoss ? 'BOSS DEFEATED! 👑' : 'Level Cleared! 🎉';
+  $('#win-stars').textContent = '★'.repeat(earnedStars) + '☆'.repeat(3 - earnedStars);
+  $('#res').textContent = `Solved in ${moves} moves (Par: ${currentPar})`;
+  setTimeout(() => { $('#modal').classList.add('on'); $('#next').focus(); }, 400);
+}
+
+function fail() {
+  busy = true;
+  playSfx('error');
+  setTimeout(() => { $('#fail-modal').classList.add('on'); }, 300);
+}
+
+$('#undo').onclick = () => {
+  if (busy || !hist.length) return;
+  const h = JSON.parse(hist.pop());
+  tubes = h.tubes;
+  revealed = h.revealed;
+  extra = h.extra;
+  isTubeUnlocked = h.isTubeUnlocked;
+  moves = Math.max(0, moves - 1);
+  sel = -1;
+  render();
+};
+
+$('#restart').onclick = () => load(level);
+$('#fail-retry').onclick = () => load(level);
+
+$('#addt').onclick = () => {
+  if (busy || extra >= 1) return;
+  hist.push(JSON.stringify({ tubes, revealed, extra, isTubeUnlocked }));
+  tubes.push([]);
+  revealed.push([]);
+  extra++;
+  playSfx('pop');
+  render();
+};
+
+$('#hint').onclick = () => {
+  if (busy) return;
+  const cfg = getLevelConfig(level);
+  const path = solvePuzzle(tubes, cfg.cap, isTubeUnlocked ? -1 : lockedTubeIdx);
+
+  if (path && path.length > 0) {
+    const [from, to] = path[0];
+    sel = from;
+    render();
+    const targetEl = $('#board').children[to];
+    if (targetEl) targetEl.classList.add('hint-dst');
+    const srcEl = $('#board').children[from];
+    if (srcEl) srcEl.classList.add('hint-src');
+  } else {
+    playSfx('error');
+  }
+};
+
+$('#next').onclick = () => {
+  level++;
+  save();
+  load(level);
+};
+
+// Level Select Screen
+$('#lvl-select-btn').onclick = () => {
+  const g = $('#grid-select'); g.innerHTML = '';
+  const totalToShow = Math.max(60, maxUnlocked + 10);
+
+  for (let l = 1; l <= totalToShow; l++) {
+    const isUnlocked = l <= maxUnlocked;
+    const isCurrent = l === level;
+    const s = starsData[l] || 0;
+    const cfg = getLevelConfig(l);
+
+    const btn = document.createElement('button');
+    btn.className = `lvl-btn ${isCurrent ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}`;
+    btn.style.borderLeftColor = cfg.tierColor;
+    btn.style.borderLeftWidth = '3px';
+
+    btn.innerHTML = `
+      <div>${cfg.isBoss ? '👑 ' : ''}${l}</div>
+      <div class="lvl-stars">${isUnlocked ? (s > 0 ? '★'.repeat(s) : '–') : '🔒'}</div>
+    `;
+
+    if (isUnlocked) {
+      btn.onclick = () => {
+        $('#select-modal').classList.remove('on');
+        load(l);
+      };
+    }
+    g.appendChild(btn);
+  }
+  $('#select-modal').classList.add('on');
+};
+
+$('#select-close').onclick = () => {
+  $('#select-modal').classList.remove('on');
+};
+
+// Theme toggle
+$('#btn-theme').onclick = () => {
+  const curr = document.documentElement.getAttribute('data-theme');
+  const next = curr === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+};
+
+load(level);
+</script>
+</body>
+</html>
